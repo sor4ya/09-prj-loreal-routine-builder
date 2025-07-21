@@ -67,11 +67,92 @@ categoryFilter.addEventListener("change", async (e) => {
   displayProducts(filteredProducts);
 });
 
-/* Chat form submission handler - placeholder for OpenAI integration */
+// Chat form submission handler - placeholder for OpenAI integration
 chatForm.addEventListener("submit", (e) => {
   e.preventDefault();
-
   chatWindow.innerHTML = "Connect to the OpenAI API for a response!";
+});
+
+// Generate Routine button handler
+const generateBtn = document.getElementById("generateRoutine");
+generateBtn.addEventListener("click", async () => {
+  // Show loading message in chat window
+  chatWindow.innerHTML = `<div class="placeholder-message">Generating your routine... <span class="loader"></span></div>`;
+
+  // Collect selected product data (name, brand, category, description)
+  const selectedProductData = selectedProducts
+    .map((id) => {
+      const product = allProducts.find((p) => String(p.id) === id);
+      if (!product) return null;
+      return {
+        name: product.name,
+        brand: product.brand,
+        category: product.category,
+        description: product.description,
+      };
+    })
+    .filter(Boolean); // Remove any nulls
+
+  // If no products selected, show message and return
+  if (selectedProductData.length === 0) {
+    chatWindow.innerHTML = `<div class="placeholder-message">Please select at least one product to generate a routine.</div>`;
+    return;
+  }
+
+  // Prepare messages for OpenAI API (beginner-friendly)
+  const messages = [
+    {
+      role: "system",
+      content:
+        "You are a helpful beauty advisor. Create a step-by-step routine using only the provided products. Be clear and concise.",
+    },
+    {
+      role: "user",
+      content: `Here are my selected products: ${JSON.stringify(
+        selectedProductData,
+        null,
+        2
+      )}. Please generate a routine using only these products.`,
+    },
+  ];
+
+  try {
+    // Call OpenAI API using fetch and async/await
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: messages,
+        max_tokens: 400,
+      }),
+    });
+
+    const data = await response.json();
+
+    // Check for a valid response and display it
+    if (
+      data &&
+      data.choices &&
+      data.choices[0] &&
+      data.choices[0].message &&
+      data.choices[0].message.content
+    ) {
+      const response = renderMarkdown(
+        data.choices[0].message.content.replace(/\n/g, "<br>")
+      );
+      // Display the AI-generated routine in the chat window
+      chatWindow.innerHTML = `<div class="ai-response">${response}</div>`;
+    } else {
+      chatWindow.innerHTML = `<div class="placeholder-message">Sorry, I couldn't generate a routine. Please try again.</div>`;
+    }
+  } catch (error) {
+    // Show error message if something goes wrong
+    chatWindow.innerHTML = `<div class="placeholder-message">Error: ${error.message}</div>`;
+  }
 });
 
 /* Enable product selection */
@@ -169,4 +250,26 @@ function addRemoveSelectedListeners(products) {
       addRemoveSelectedListeners(products);
     });
   });
+}
+
+// Helper function to render basic markdown to HTML for OpenAI responses
+function renderMarkdown(markdown) {
+  // Replace headings
+  let html = markdown
+    .replace(/^### (.*$)/gim, "<h3>$1</h3>")
+    .replace(/^## (.*$)/gim, "<h2>$1</h2>")
+    .replace(/^# (.*$)/gim, "<h1>$1</h1>");
+  // Replace bold and italics
+  html = html
+    .replace(/\*\*(.*?)\*\*/gim, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/gim, "<em>$1</em>");
+  // Replace unordered lists
+  html = html.replace(/^\s*\- (.*$)/gim, "<li>$1</li>");
+  // Replace ordered lists
+  html = html.replace(/^\s*\d+\. (.*$)/gim, "<li>$1</li>");
+  // Wrap list items in <ul> or <ol>
+  html = html.replace(/(<li>.*<\/li>)/gims, "<ul>$1</ul>");
+  // Replace line breaks
+  html = html.replace(/\n/g, "<br>");
+  return html;
 }
