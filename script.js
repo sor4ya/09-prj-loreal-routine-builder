@@ -72,7 +72,7 @@ let conversationHistory = [
   {
     role: "system",
     content:
-      "You are a helpful beauty advisor. Only answer questions about the generated routine, skincare, haircare, makeup, fragrance, or other beauty-related topics. If a question is off-topic, politely guide the user back to beauty topics.",
+      "You are a helpful beauty advisor for L'Oréal. Only answer questions about the generated routine, skincare, haircare, makeup, fragrance, or other beauty-related topics. If a question is off-topic, politely respond that you can only assist with L’Oréal-related topics.",
   },
 ];
 
@@ -115,11 +115,10 @@ generateBtn.addEventListener("click", async () => {
 
   try {
     // Call OpenAI API using fetch and async/await
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch(worker_url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         model: "gpt-4o",
@@ -171,11 +170,10 @@ chatForm.addEventListener("submit", async (e) => {
 
   try {
     // Call OpenAI API with full conversation history
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch(worker_url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         model: "gpt-4o",
