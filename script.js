@@ -121,7 +121,7 @@ generateBtn.addEventListener("click", async () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gpt-4o-search-preview-2025-03-11", // or 'gpt-4o-search-preview' if available
         messages: conversationHistory,
         max_tokens: 400,
       }),
@@ -129,7 +129,7 @@ generateBtn.addEventListener("click", async () => {
 
     const data = await response.json();
 
-    // Check for a valid response and display it
+    // Check for a valid response and display it, including links/citations if present
     if (
       data &&
       data.choices &&
@@ -142,7 +142,22 @@ generateBtn.addEventListener("click", async () => {
         role: "assistant",
         content: data.choices[0].message.content,
       });
-      const responseHtml = renderMarkdown(data.choices[0].message.content);
+      let responseHtml = renderMarkdown(data.choices[0].message.content);
+
+      // If citations/links are present, display them
+      if (data.choices[0].message.citations || data.choices[0].message.links) {
+        responseHtml +=
+          '<div class="ai-citations"><strong>Sources:</strong><ul>';
+        const links =
+          data.choices[0].message.citations || data.choices[0].message.links;
+        links.forEach((link) => {
+          responseHtml += `<li><a href="${link.url || link}" target="_blank">${
+            link.title || link.url || link
+          }</a></li>`;
+        });
+        responseHtml += "</ul></div>";
+      }
+
       chatWindow.innerHTML = `<div class="ai-response">${responseHtml}</div>`;
     } else {
       chatWindow.innerHTML = `<div class="placeholder-message">Sorry, I couldn't generate a routine. Please try again.</div>`;
@@ -176,7 +191,7 @@ chatForm.addEventListener("submit", async (e) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gpt-4o-search-preview-2025-03-11", // or 'gpt-4o-search-preview' if available
         messages: conversationHistory,
         max_tokens: 400,
       }),
@@ -196,7 +211,7 @@ chatForm.addEventListener("submit", async (e) => {
         role: "assistant",
         content: data.choices[0].message.content,
       });
-      const responseHtml = renderMarkdown(data.choices[0].message.content);
+      let responseHtml = renderMarkdown(data.choices[0].message.content);
       chatWindow.innerHTML = `<div class="user-question"><strong>You:</strong> ${userInput}</div><div class="ai-response">${responseHtml}</div>`;
     } else {
       chatWindow.innerHTML = `<div class="placeholder-message">Sorry, I couldn't answer that. Please try again.</div>`;
@@ -357,6 +372,11 @@ function renderMarkdown(markdown) {
   html = html
     .replace(/\*\*(.*?)\*\*/gim, "<strong>$1</strong>")
     .replace(/\*(.*?)\*/gim, "<em>$1</em>");
+  // Replace markdown links [text](url)
+  html = html.replace(
+    /\[([^\]]+)\]\(([^\)]+)\)/g,
+    '<a href="$2" target="_blank">$1</a>'
+  );
   // Replace unordered lists
   html = html.replace(/^\s*\- (.*$)/gim, "<li>$1</li>");
   // Replace ordered lists
