@@ -67,11 +67,14 @@ categoryFilter.addEventListener("change", async (e) => {
   displayProducts(filteredProducts);
 });
 
-// Chat form submission handler - placeholder for OpenAI integration
-chatForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  chatWindow.innerHTML = "Connect to the OpenAI API for a response!";
-});
+// Store the full conversation history for context
+let conversationHistory = [
+  {
+    role: "system",
+    content:
+      "You are a helpful beauty advisor. Only answer questions about the generated routine, skincare, haircare, makeup, fragrance, or other beauty-related topics. If a question is off-topic, politely guide the user back to beauty topics.",
+  },
+];
 
 // Generate Routine button handler
 const generateBtn = document.getElementById("generateRoutine");
@@ -99,22 +102,16 @@ generateBtn.addEventListener("click", async () => {
     return;
   }
 
-  // Prepare messages for OpenAI API (beginner-friendly)
-  const messages = [
-    {
-      role: "system",
-      content:
-        "You are a helpful beauty advisor. Create a step-by-step routine using only the provided products. Be clear and concise.",
-    },
-    {
-      role: "user",
-      content: `Here are my selected products: ${JSON.stringify(
-        selectedProductData,
-        null,
-        2
-      )}. Please generate a routine using only these products.`,
-    },
-  ];
+  // Add the user's request to the conversation history
+  conversationHistory = [conversationHistory[0]]; // Reset to system prompt only
+  conversationHistory.push({
+    role: "user",
+    content: `Here are my selected products: ${JSON.stringify(
+      selectedProductData,
+      null,
+      2
+    )}. Please generate a routine using only these products.`,
+  });
 
   try {
     // Call OpenAI API using fetch and async/await
@@ -126,7 +123,7 @@ generateBtn.addEventListener("click", async () => {
       },
       body: JSON.stringify({
         model: "gpt-4o",
-        messages: messages,
+        messages: conversationHistory,
         max_tokens: 400,
       }),
     });
@@ -141,11 +138,13 @@ generateBtn.addEventListener("click", async () => {
       data.choices[0].message &&
       data.choices[0].message.content
     ) {
-      const response = renderMarkdown(
-        data.choices[0].message.content.replace(/\n/g, "<br>")
-      );
-      // Display the AI-generated routine in the chat window
-      chatWindow.innerHTML = `<div class="ai-response">${response}</div>`;
+      // Add assistant's response to conversation history
+      conversationHistory.push({
+        role: "assistant",
+        content: data.choices[0].message.content,
+      });
+      const responseHtml = renderMarkdown(data.choices[0].message.content);
+      chatWindow.innerHTML = `<div class="ai-response">${responseHtml}</div>`;
     } else {
       chatWindow.innerHTML = `<div class="placeholder-message">Sorry, I couldn't generate a routine. Please try again.</div>`;
     }
@@ -155,21 +154,97 @@ generateBtn.addEventListener("click", async () => {
   }
 });
 
-/* Enable product selection */
-// Array to keep track of selected products by id
-// Helper: visually mark selected cards
-function updateProductCardSelection() {
-  const cards = document.querySelectorAll(".product-card");
+// Chat form submission handler for follow-up questions
+chatForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const userInput = document.getElementById("userInput").value.trim();
+  if (!userInput) return;
 
-  cards.forEach((card) => {
-    const productId = card.getAttribute("data-id");
-
-    if (selectedProducts.includes(productId)) {
-      card.classList.add("selected");
-    } else {
-      card.classList.remove("selected");
-    }
+  // Add user's question to conversation history
+  conversationHistory.push({
+    role: "user",
+    content: userInput,
   });
+
+  // Show user's question and loading message in chat window
+  chatWindow.innerHTML = `<div class="user-question"><strong>You:</strong> ${userInput}</div><div class="placeholder-message">Thinking...</div>`;
+
+  try {
+    // Call OpenAI API with full conversation history
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: conversationHistory,
+        max_tokens: 400,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (
+      data &&
+      data.choices &&
+      data.choices[0] &&
+      data.choices[0].message &&
+      data.choices[0].message.content
+    ) {
+      // Add assistant's response to conversation history
+      conversationHistory.push({
+        role: "assistant",
+        content: data.choices[0].message.content,
+      });
+      const responseHtml = renderMarkdown(data.choices[0].message.content);
+      chatWindow.innerHTML = `<div class="user-question"><strong>You:</strong> ${userInput}</div><div class="ai-response">${responseHtml}</div>`;
+    } else {
+      chatWindow.innerHTML = `<div class="placeholder-message">Sorry, I couldn't answer that. Please try again.</div>`;
+    }
+  } catch (error) {
+    chatWindow.innerHTML = `<div class="placeholder-message">Error: ${error.message}</div>`;
+  }
+
+  // Clear the input box
+  document.getElementById("userInput").value = "";
+});
+
+// Load selected products from localStorage if available
+selectedProducts = JSON.parse(localStorage.getItem("selectedProducts") || "[]");
+
+// Save selected products to localStorage
+function saveSelectedProducts() {
+  localStorage.setItem("selectedProducts", JSON.stringify(selectedProducts));
+}
+
+// Add a Clear All button to the selected products section
+function addClearAllButton() {
+  const selectedProductsHeader = document.querySelector(
+    ".selected-products-header"
+  );
+  if (!selectedProductsHeader) return;
+
+  let clearBtn = document.getElementById("clearAllSelected");
+  if (!clearBtn) {
+    clearBtn = document.createElement("button");
+    clearBtn.id = "clearAllSelected";
+    clearBtn.className = "clear-all-btn";
+    clearBtn.title = "Clear All Selected Products";
+    clearBtn.innerHTML = `<i class="fa-solid fa-trash-can"></i> Clear All`;
+    clearBtn.onclick = function (e) {
+      e.stopPropagation();
+      selectedProducts = [];
+      saveSelectedProducts();
+      updateProductCardSelection();
+      updateSelectedProductsList();
+    };
+    // Position at top right of selected products header
+    selectedProductsHeader.appendChild(clearBtn);
+  }
+  // Hide if no products selected
+  clearBtn.style.display = selectedProducts.length > 0 ? "inline-flex" : "none";
 }
 
 // Update the Selected Products section
@@ -179,6 +254,7 @@ function updateSelectedProductsList() {
   if (selectedProducts.length === 0) {
     selectedList.innerHTML =
       '<div class="placeholder-message">No products selected</div>';
+    addClearAllButton();
     return;
   }
 
@@ -194,6 +270,24 @@ function updateSelectedProductsList() {
       `;
     })
     .join("");
+  addClearAllButton();
+  // Add event listeners for remove buttons after updating the HTML
+  addRemoveSelectedListeners();
+}
+
+// Helper: visually mark selected cards
+function updateProductCardSelection() {
+  const cards = document.querySelectorAll(".product-card");
+
+  cards.forEach((card) => {
+    const productId = card.getAttribute("data-id");
+
+    if (selectedProducts.includes(productId)) {
+      card.classList.add("selected");
+    } else {
+      card.classList.remove("selected");
+    }
+  });
 }
 
 // Add click event to product cards for selection/unselection
@@ -211,10 +305,10 @@ function addProductCardListeners(products) {
         // Select
         selectedProducts.push(productId);
       }
-
+      saveSelectedProducts();
       updateProductCardSelection();
       updateSelectedProductsList();
-      addRemoveSelectedListeners(products);
+      addRemoveSelectedListeners();
     });
 
     // Add hover effects to show/hide product description
@@ -236,7 +330,7 @@ function addProductCardListeners(products) {
 }
 
 // Add click event to remove buttons in selected products list
-function addRemoveSelectedListeners(products) {
+function addRemoveSelectedListeners() {
   const selectedList = document.getElementById("selectedProductsList");
   if (!selectedList) return;
 
@@ -244,10 +338,12 @@ function addRemoveSelectedListeners(products) {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const productId = btn.getAttribute("data-id");
-      selectedProducts = selectedProducts.filter((id) => id !== productId);
-      updateProductCardSelection();
-      updateSelectedProductsList();
-      addRemoveSelectedListeners(products);
+      if (productId) {
+        selectedProducts = selectedProducts.filter((id) => id !== productId);
+        saveSelectedProducts();
+        updateProductCardSelection();
+        updateSelectedProductsList();
+      }
     });
   });
 }
@@ -273,3 +369,12 @@ function renderMarkdown(markdown) {
   html = html.replace(/\n/g, "<br>");
   return html;
 }
+
+// On page load, restore selected products and update UI
+window.addEventListener("DOMContentLoaded", async () => {
+  // Load products first so allProducts is populated
+  await loadProducts();
+  // Then update the UI with the correct product names
+  updateProductCardSelection();
+  updateSelectedProductsList();
+});
