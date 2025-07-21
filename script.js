@@ -35,8 +35,13 @@ function displayProducts(products) {
     <div class="product-card" data-id="${product.id}">
       <img src="${product.image}" alt="${product.name}">
       <div class="product-info">
-        <h3>${product.name}</h3>
-        <p>${product.brand}</p>
+        <div class="product-details">
+          <h3>${product.name}</h3>
+          <p>${product.brand}</p>
+        </div>
+        <div class="product-description" style="display: none;">
+          <p>${product.description}</p>
+        </div>
       </div>
     </div>
   `
@@ -115,6 +120,7 @@ function addProductCardListeners(products) {
   const cards = document.querySelectorAll(".product-card");
 
   cards.forEach((card) => {
+    // Add click event for selection
     card.addEventListener("click", () => {
       const productId = card.getAttribute("data-id");
       if (selectedProducts.includes(productId)) {
@@ -128,6 +134,22 @@ function addProductCardListeners(products) {
       updateProductCardSelection();
       updateSelectedProductsList();
       addRemoveSelectedListeners(products);
+    });
+
+    // Add hover effects to show/hide product description
+    const productDetails = card.querySelector(".product-details");
+    const productDescription = card.querySelector(".product-description");
+
+    card.addEventListener("mouseenter", () => {
+      // Hide name and brand, show description
+      productDetails.style.display = "none";
+      productDescription.style.display = "block";
+    });
+
+    card.addEventListener("mouseleave", () => {
+      // Show name and brand, hide description
+      productDetails.style.display = "block";
+      productDescription.style.display = "none";
     });
   });
 }

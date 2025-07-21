@@ -256,6 +256,62 @@ body {
   color: #666;
 }
 
+/* Product description styling with scrollable area */
+.product-description {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  height: 100%;
+  animation: fadeIn 0.3s ease-in-out;
+  padding: 2px 0;
+}
+
+.product-description p {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #555;
+  max-height: 100px;
+  overflow-y: auto;
+  padding-right: 5px;
+  /* Custom scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: #e3a535 #f0f0f0;
+}
+
+/* Webkit scrollbar styling for Chrome/Safari */
+.product-description p::-webkit-scrollbar {
+  width: 4px;
+}
+
+.product-description p::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 2px;
+}
+
+.product-description p::-webkit-scrollbar-thumb {
+  background: #e3a535;
+  border-radius: 2px;
+}
+
+.product-description p::-webkit-scrollbar-thumb:hover {
+  background: #d4941f;
+}
+
+/* Smooth transition for content changes */
+.product-details,
+.product-description {
+  transition: all 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* selected products */
 .selected-products {
   margin: 40px 0;
