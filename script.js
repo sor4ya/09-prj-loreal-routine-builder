@@ -1,13 +1,14 @@
 /* Get references to DOM elements */
 const categoryFilter = document.getElementById("categoryFilter");
+const productSearch = document.getElementById("productSearch");
 const productsContainer = document.getElementById("productsContainer");
 const chatForm = document.getElementById("chatForm");
 const chatWindow = document.getElementById("chatWindow");
 
-/* Show initial placeholder until user selects a category */
+/* Show initial placeholder until user selects a category or searches */
 productsContainer.innerHTML = `
   <div class="placeholder-message">
-    Select a category to view products
+    Select a category or search for products
   </div>
 `;
 
@@ -53,18 +54,82 @@ function displayProducts(products) {
   updateProductCardSelection();
 }
 
-/* Filter and display products when category changes */
-categoryFilter.addEventListener("change", async (e) => {
-  const products = await loadProducts();
-  const selectedCategory = e.target.value;
+/* Filter and display products based on category and search term */
+function filterAndDisplayProducts() {
+  // Get current filter values
+  const selectedCategory = categoryFilter.value;
+  const searchTerm = productSearch.value.toLowerCase().trim();
 
-  /* filter() creates a new array containing only products 
-     where the category matches what the user selected */
-  const filteredProducts = products.filter(
-    (product) => product.category === selectedCategory
-  );
+  // Start with all products
+  let filteredProducts = allProducts;
 
+  // Apply category filter if a category is selected
+  if (selectedCategory) {
+    filteredProducts = filteredProducts.filter(
+      (product) => product.category === selectedCategory
+    );
+  }
+
+  // Apply search filter if there's a search term
+  if (searchTerm) {
+    filteredProducts = filteredProducts.filter((product) => {
+      // Search in product name, brand, description, and category
+      const searchableText = [
+        product.name,
+        product.brand,
+        product.description,
+        product.category,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(searchTerm);
+    });
+  }
+
+  // Show message if no category selected and no search term
+  if (!selectedCategory && !searchTerm) {
+    productsContainer.innerHTML = `
+      <div class="placeholder-message">
+        Select a category or search for products
+      </div>
+    `;
+    return;
+  }
+
+  // Show message if no products found
+  if (filteredProducts.length === 0) {
+    const message = searchTerm
+      ? `No products found matching "${searchTerm}"`
+      : "No products found in this category";
+    productsContainer.innerHTML = `
+      <div class="placeholder-message">
+        ${message}
+      </div>
+    `;
+    return;
+  }
+
+  // Display filtered products
   displayProducts(filteredProducts);
+}
+
+/* Filter and display products when category changes */
+categoryFilter.addEventListener("change", async () => {
+  // Load products if not already loaded
+  if (allProducts.length === 0) {
+    await loadProducts();
+  }
+  filterAndDisplayProducts();
+});
+
+/* Filter products as user types in search field */
+productSearch.addEventListener("input", async () => {
+  // Load products if not already loaded
+  if (allProducts.length === 0) {
+    await loadProducts();
+  }
+  filterAndDisplayProducts();
 });
 
 // Store the full conversation history for context

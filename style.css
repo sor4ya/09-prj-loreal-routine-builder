@@ -41,14 +41,16 @@ body {
   margin-bottom: 10px;
 }
 
-/* category filter */
+/* category filter and search */
 .search-section {
   margin: 30px 0;
   display: flex;
+  gap: 20px;
+  align-items: center;
 }
 
 .search-section select {
-  width: 100%;
+  flex: 0 0 200px; /* Fixed width instead of flex: 1 */
   padding: 16px;
   font-size: 18px;
   border: 2px solid #000;
@@ -61,6 +63,40 @@ body {
 .search-section select:focus {
   outline: none;
   border-color: #666;
+}
+
+.search-input-container {
+  flex: 1; /* Takes remaining space */
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 100%;
+  padding: 16px 50px 16px 16px;
+  font-size: 18px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  background-color: white;
+  transition: border-color 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #000;
+}
+
+.search-input::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+.search-icon {
+  position: absolute;
+  right: 16px;
+  color: #666;
+  pointer-events: none;
 }
 
 /* chat section */
