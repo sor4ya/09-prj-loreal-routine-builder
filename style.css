@@ -468,3 +468,117 @@ body {
 .generate-btn i {
   margin-right: 8px;
 }
+
+/* ===== RTL (Right-to-Left) Language Support ===== */
+
+/* Apply RTL styles when dir="rtl" is set on html element */
+[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Search section RTL adjustments */
+[dir="rtl"] .search-section {
+  direction: rtl;
+}
+
+[dir="rtl"] .search-input {
+  padding: 16px 16px 16px 50px; /* Flip padding for RTL */
+  text-align: right;
+}
+
+[dir="rtl"] .search-icon {
+  left: 16px; /* Move search icon to the left in RTL */
+  right: auto;
+}
+
+/* Product grid RTL adjustments */
+[dir="rtl"] .product-card {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .product-card.selected::before {
+  left: 10px; /* Move checkmark to left in RTL */
+  right: auto;
+}
+
+[dir="rtl"] .product-card img {
+  order: 2; /* Move image to the right in RTL */
+}
+
+[dir="rtl"] .product-card .product-info {
+  order: 1; /* Move text content to the left in RTL */
+}
+
+/* Selected products section RTL adjustments */
+[dir="rtl"] .selected-products-header {
+  direction: rtl;
+}
+
+[dir="rtl"] .selected-product-item {
+  direction: rtl;
+}
+
+[dir="rtl"] .remove-selected {
+  margin-left: 0;
+  margin-right: 4px; /* Flip margin in RTL */
+}
+
+/* Chat interface RTL adjustments */
+[dir="rtl"] .chatbox {
+  direction: rtl;
+}
+
+[dir="rtl"] .chat-window {
+  text-align: right;
+}
+
+[dir="rtl"] .chat-form {
+  direction: rtl;
+}
+
+[dir="rtl"] .chat-form input {
+  text-align: right;
+}
+
+[dir="rtl"] .user-question {
+  text-align: right;
+}
+
+[dir="rtl"] .ai-response {
+  text-align: right;
+}
+
+/* Generate button RTL adjustments */
+[dir="rtl"] .generate-btn i {
+  margin-right: 0;
+  margin-left: 8px; /* Flip icon margin in RTL */
+}
+
+/* Footer RTL adjustments */
+[dir="rtl"] .site-footer {
+  direction: rtl;
+}
+
+/* Scrollbar adjustments for RTL */
+[dir="rtl"] .product-description p {
+  padding-right: 0;
+  padding-left: 5px; /* Flip scrollbar padding in RTL */
+}
+
+/* Clear all button RTL adjustments */
+[dir="rtl"] .clear-all-btn i {
+  margin-left: 0;
+  margin-right: 6px; /* Flip icon margin in RTL */
+}
+
+/* Citations RTL adjustments */
+[dir="rtl"] .ai-citations {
+  text-align: right;
+}
+
+[dir="rtl"] .ai-citations ul {
+  padding-left: 0;
+  padding-right: 20px; /* Flip list padding in RTL */
+}

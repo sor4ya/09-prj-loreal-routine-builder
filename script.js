@@ -455,9 +455,121 @@ function renderMarkdown(markdown) {
 
 // On page load, restore selected products and update UI
 window.addEventListener("DOMContentLoaded", async () => {
+  // Initialize RTL language detection and monitoring
+  initializeRTLSupport();
+
   // Load products first so allProducts is populated
   await loadProducts();
   // Then update the UI with the correct product names
   updateProductCardSelection();
   updateSelectedProductsList();
 });
+
+/* RTL Language Support Functions */
+
+// Function to detect if the current page language is RTL
+function detectRTLLanguage() {
+  const rtlLanguages = ["ar", "he", "fa", "ur", "ku", "ps", "sd", "ug", "dv"];
+
+  // Check multiple sources for language information
+  const htmlLang = document.documentElement.lang;
+  const bodyLang = document.body.lang;
+  const browserLang = navigator.language || navigator.userLanguage;
+
+  // Check if any detected language is RTL
+  const languages = [htmlLang, bodyLang, browserLang.split("-")[0]];
+
+  return languages.some(
+    (lang) => lang && rtlLanguages.includes(lang.toLowerCase())
+  );
+}
+
+// Function to detect RTL text content in the page
+function detectRTLContent() {
+  // Sample text from different page elements to check if they contain RTL characters
+  const textSamples = [
+    document.querySelector(".site-title")?.textContent || "",
+    document.querySelector(".placeholder-message")?.textContent || "",
+    document.querySelector("#userInput")?.placeholder || "",
+  ];
+
+  // RTL character ranges (Arabic, Hebrew, Persian, etc.)
+  const rtlCharPattern =
+    /[\u0590-\u083F]|[\u08A0-\u08FF]|[\uFB1D-\uFDFF]|[\uFE70-\uFEFF]/;
+
+  return textSamples.some((text) => rtlCharPattern.test(text));
+}
+
+// Function to automatically set language direction based on detection
+function autoDetectAndSetDirection() {
+  const isRTLLanguage = detectRTLLanguage();
+  const hasRTLContent = detectRTLContent();
+
+  if (isRTLLanguage || hasRTLContent) {
+    document.documentElement.setAttribute("dir", "rtl");
+    console.log("RTL layout automatically applied");
+  } else {
+    document.documentElement.setAttribute("dir", "ltr");
+  }
+}
+
+// Function to monitor for page translation changes
+function monitorForTranslation() {
+  // Create a MutationObserver to watch for text changes (translation)
+  const observer = new MutationObserver((mutations) => {
+    let textChanged = false;
+
+    mutations.forEach((mutation) => {
+      // Check if text content or attributes changed
+      if (
+        mutation.type === "childList" ||
+        mutation.type === "characterData" ||
+        (mutation.type === "attributes" && mutation.attributeName === "lang")
+      ) {
+        textChanged = true;
+      }
+    });
+
+    if (textChanged) {
+      // Delay slightly to allow translation to complete
+      setTimeout(autoDetectAndSetDirection, 100);
+    }
+  });
+
+  // Observe the entire document for changes
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ["lang"],
+  });
+
+  // Also check periodically for translation changes
+  setInterval(autoDetectAndSetDirection, 2000);
+}
+
+// Function to set language direction based on detected or selected language
+function setLanguageDirection(language) {
+  const rtlLanguages = ["ar", "he", "fa", "ur", "ku", "ps", "sd", "ug", "dv"];
+  const html = document.documentElement;
+
+  if (rtlLanguages.includes(language.toLowerCase())) {
+    html.setAttribute("dir", "rtl");
+    html.setAttribute("lang", language);
+  } else {
+    html.setAttribute("dir", "ltr");
+    html.setAttribute("lang", language);
+  }
+}
+
+// Initialize RTL detection when page loads
+function initializeRTLSupport() {
+  // Initial detection
+  autoDetectAndSetDirection();
+
+  // Start monitoring for translation changes
+  monitorForTranslation();
+
+  console.log("RTL auto-detection initialized");
+}
